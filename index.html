@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mini IoT Dashboard</title>
+    <style>
+      body { font-family: system-ui, sans-serif; padding: 20px; }
+      .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; max-width: 420px; }
+      .label { color: #555; }
+      .value { font-size: 28px; margin: 6px 0; }
+      .badge { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #eee; }
+    </style>
+  </head>
+  <body>
+    <h1>Mini IoT Dashboard</h1>
+    <div class="card">
+      <div class="label">Device</div>
+      <div id="deviceId" class="value">—</div>
+
+      <div class="label">Temperature (°C)</div>
+      <div id="temp" class="value">—</div>
+
+      <div class="label">Humidity (%)</div>
+      <div id="hum" class="value">—</div>
+
+      <div class="label">Status</div>
+      <div id="status" class="badge">—</div>
+    </div>
+
+    <script>
+      async function refresh() {
+        try {
+          const latest = await fetch("http://127.0.0.1:8000/latest").then(r => r.json());
+          document.getElementById("deviceId").textContent = latest.deviceId ?? "—";
+          document.getElementById("temp").textContent = latest.temp_c ?? "—";
+          document.getElementById("hum").textContent = latest.humidity ?? "—";
+
+          const pred = await fetch("http://127.0.0.1:8000/predict").then(r => r.json());
+          const s = document.getElementById("status");
+          if (pred.prediction) {
+            const { label, score } = pred.prediction;
+            s.textContent = `${label} (${Math.round(score*100)}%)`;
+            s.style.background = (label === "hot") ? "#ffd6d6" : "#e7f7e7";
+          } else {
+            s.textContent = pred.error || "—";
+            s.style.background = "#eee";
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+      setInterval(refresh, 1500);
+      refresh();
+    </script>
+  </body>
+</html>
